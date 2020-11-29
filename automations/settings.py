@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_tables2',
     'sitetree',
+    'rest_framework',
     'automations_app',
     'import_export',
 ]

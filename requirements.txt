@@ -3,3 +3,4 @@ mysqlclient>=2.0.1
 django-sitetree>=1.16.0
 django-tables2>=2.3.3
 django-import-export>=2.4.0
+djangorestframework>=3.12.2
