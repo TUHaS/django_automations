@@ -1,0 +1,12 @@
+{% extends "automations_app/base.html" %}
+{% load static %}
+{% load render_table from django_tables2 %}
+
+{% block static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'automations_app/table.css' %}">
+{% endblock %}
+{% block content %}
+<div class="table-content">
+    {% render_table table %}
+</div>
+{% endblock %}

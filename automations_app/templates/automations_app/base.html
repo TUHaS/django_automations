@@ -1,0 +1,19 @@
+{% load sitetree %}
+{% load static %}
+
+<html lang="en">
+    <head>
+        {% block head %}
+            <title> Test Automation </title>
+        {% endblock %}
+    </head>
+    <body>
+     <link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}" >
+     {% block static %}
+     {% endblock %}
+        {% include  "automations_app/menu.html" %}
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
+</html>

@@ -1,0 +1,14 @@
+{% load sitetree %}
+{% load static %}
+
+{% block static %}
+<link rel="stylesheet" type="text/css" href="{% static 'automations_app/menu.css' %}">
+{% endblock %}
+<div class="menu">
+        <h1 class="logo">
+            <a href= "{% url 'automations_app:home' %}"><span>Automation Tools</span></a>
+        </h1>
+    <div class="msg">
+        {% sitetree_menu from "menu" include "trunk, topmenu" %}
+    </div>
+</div>
