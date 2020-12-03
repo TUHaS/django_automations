@@ -1,5 +1,4 @@
 from django.urls import re_path, include, path
-from django.contrib.auth.views import LoginView
 
 from . import views
 
@@ -13,5 +12,5 @@ urlpatterns = [
             name="tested-apps"),
     path('', include("django.contrib.auth.urls")),
     re_path("^login/?$", views.AuthenticateView.as_view(), name="login"),
-    re_path("^register/?$", views.RegistrationView.as_view(), name="register")
+    re_path("^register/?$", views.RegistrationView.as_view(), name="register"),
 ]

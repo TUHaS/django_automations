@@ -2,17 +2,25 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
-class SkillLevel(models.Model):
-    name = models.CharField(max_length=100)
-    salary = models.DecimalField(decimal_places=0, max_digits=9)
-
-    def __str__(self):
-        return self.name
+# class SkillLevel(models.Model):
+#     name = models.CharField(max_length=100)
+#     salary = models.DecimalField(decimal_places=0, max_digits=9)
+#
+#     def __str__(self):е
+#         return self.name
 
 
 class User(AbstractUser):
-    level = models.ForeignKey(SkillLevel, on_delete=models.CASCADE,
-                              related_name="level_user_fk", null=True)
+    # level = models.ForeignKey(SkillLevel, on_delete=models.CASCADE,
+    #                           related_name="level_user_fk", null=True)
+    LEVEL_CHOICES = [
+        ("Junior", "Junior"),
+        ("Senior", "Senior"),
+        ("Middle", "Middle")
+    ]
+    level = models.CharField(max_length=6, choices=LEVEL_CHOICES,
+                             default="Junior")
+    salary = models.DecimalField(decimal_places=0, max_digits=9, default=0.00)
 
     def __str__(self):
         return self.username
@@ -22,6 +30,8 @@ class TestedApplication(models.Model):
     name = models.CharField(max_length=100)
     complication = models.IntegerField()
     number_testers = models.IntegerField()
+    coverage_percent = models.DecimalField(decimal_places=2, max_digits=5,
+                                           default=0.00)
 
     def __str__(self):
         return self.name

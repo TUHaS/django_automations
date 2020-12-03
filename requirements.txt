@@ -4,3 +4,6 @@ django-sitetree>=1.16.0
 django-tables2>=2.3.3
 django-import-export>=2.4.0
 djangorestframework>=3.12.2
+scikit-learn>=0.23.2
+numpy>=1.19.4
+matplotlib>=3.3.3
