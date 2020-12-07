@@ -2,14 +2,17 @@ import io
 import base64
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from django.shortcuts import render
+from django.http import JsonResponse
 from django_tables2 import SingleTableView
-from django_tables2 import RequestConfig
+from django.core.files.storage import default_storage
 from django.contrib.auth.views import LoginView
 from django.views.generic.edit import FormView
 from django.contrib.auth import authenticate, login
+from django.conf import settings
 from rest_framework import permissions
 from rest_framework.generics import views
 
@@ -25,37 +28,60 @@ def index(request):
 class TestersView(SingleTableView, views.APIView):
     model = User
     table_class = TesterTable
+    paginate_by = 10  # кол-во записей на страницу таблицы
     template_name = "automations_app/table_user.html"
     permission_classes = [permissions.IsAdminUser]
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request):
+        response_context = {}
         # получение всех записей из модели (таблицы) Hour
         objs_hours = Hour.objects.all()
         array = np.zeros((len(objs_hours), 2), dtype=np.float)
-        # формирование выборки (сложность проекта + зарплата тестера)
-        for idx, obj in enumerate(objs_hours):
-            array[idx, 0] = obj.application.complication
-            array[idx, 1] = float(obj.tester.salary)
-        # вычисление центров для масс и получение меток для выборки
-        labels = KMeans(n_clusters=3, random_state=0).fit_predict(array)
-        # преобразование изображения в base64
-        img = self.plot_to_base64(array, labels)
-        # формирование объекта таблицы (django-tables2)
-        table = self.table_class(User.objects.all())
-        # настройка пагинатора таблицы (ограничение в 10 записей на страницу)
-        RequestConfig(request, paginate={"per_page": 10}).configure(table)
-        context = {"image": img, 'table': table}
-        # возвращение ответа на запрос (рендеринг HTML шаблона и передача в него изображения
-        return render(request, self.template_name, context)
+        if len(objs_hours) > 0:
+            # формирование выборки (сложность проекта + зарплата тестера)
+            for idx, obj in enumerate(objs_hours):
+                array[idx, 0] = obj.application.complication
+                array[idx, 1] = float(obj.tester.salary)
+            # вычисление центров для масс и получение меток для выборки
+            labels = KMeans(n_clusters=3, random_state=0).fit_predict(array)
+            # преобразование результата в бинарный формат
+            if request.data['type'] == 'image':
+                file = self.get_image_bytes(array, labels)
+                filename = 'image.jpeg'
+            elif request.data['type'] == 'clustering-data':
+                file = self.get_excel_bytes(array, labels)
+                filename = 'data.xlsx'
+            else:
+                return JsonResponse(response_context, status=400)
+            # сохранение файла на сервере
+            res_filename = default_storage.save(filename, file)
+            target_url = request.build_absolute_uri(settings.MEDIA_URL + res_filename)
+            response_context["path"] = target_url
+        # возвращение ответа клиенту
+        return JsonResponse(response_context, status=200)
 
     @staticmethod
-    def plot_to_base64(array, labels):
+    def get_image_bytes(array, labels):
         pic_bytes = io.BytesIO()
         plt.scatter(array[:, 0], array[:, 1], c=labels)
         plt.savefig(pic_bytes, format="png")
         pic_bytes.seek(0)
-        image_data = base64.b64encode(pic_bytes.read()).decode('utf-8')
-        return image_data
+        return pic_bytes
+
+    @staticmethod
+    def get_excel_bytes(array, labels):
+        array_copy = array.copy()
+        new_data = np.zeros((array_copy.shape[0], array_copy.shape[1]+1),
+                            dtype=np.float)
+        new_data[:, 0] = array[:, 0]
+        new_data[:, 1] = array[:, 1]
+        new_data[:, 2] = labels
+        data_bytes = io.BytesIO()
+        df = pd.DataFrame(new_data, columns=["Complication", "Salary",
+                                             "KMeans Group ID"])
+        df.to_excel(data_bytes, index=False, encoding='utf-8')
+        data_bytes.seek(0)
+        return data_bytes
 
 
 class TestedApplicationsView(SingleTableView, views.APIView):

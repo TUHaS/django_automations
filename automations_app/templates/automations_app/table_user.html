@@ -1,5 +1,37 @@
 {% extends "automations_app/table.html" %}
 
-{% block image %}
-    <img src="data:image/png;base64,{{ image }}">
+{% block button %}
+    <button type="button" onclick="getClusteringImage();">Save image</button>
+    <button type="button" onclick="saveClusteringData();">Save clustering data</button>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+        function getClusteringImage(){
+            $.ajax({
+                type: "POST",
+                url: "{% url 'automations_app:testers' %}",
+                data: {
+                    "type": "image",
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                },
+                success: function (response) {
+                    window.location.href = response['path'];
+                }
+            });
+        }
+        function saveClusteringData(){
+            $.ajax({
+                type: "POST",
+                url: "{% url 'automations_app:testers' %}",
+                data: {
+                    "type": "clustering-data",
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                },
+                success: function (response) {
+                    window.location.href = response['path'];
+                }
+            });
+        }
+</script>
 {% endblock %}
