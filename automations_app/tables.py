@@ -4,14 +4,15 @@ from .models import User, Hour, TestedApplication, Tool
 
 
 class TesterTable(tables.Table):
+    username = tables.Column()
     first_name = tables.Column()
     last_name = tables.Column(verbose_name="surname")
-    level = tables.Column(accessor="level.name", verbose_name="skill")
-    salary = tables.Column(accessor="level.salary")
+    level = tables.Column(verbose_name="skill")
+    salary = tables.Column()
 
     class Meta:
         model = User
-        exclude = ("password", "last login", "is_superuser", "username", "email",
+        exclude = ("password", "last login", "is_superuser", "email",
                    "is_staff", "is_active", "last_login", "date_joined")
 
 
