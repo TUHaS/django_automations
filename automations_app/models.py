@@ -36,13 +36,13 @@ class TestedApplication(models.Model):
     number_testers = models.IntegerField()
     coverage_percent = models.DecimalField(decimal_places=2, max_digits=5,
                                            default=0.00)
+    tool = models.ForeignKey('Tool', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
 
 class Tool(models.Model):
-    application = models.ForeignKey(TestedApplication, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     programming_language = models.CharField(max_length=100)
     open_source_code = models.CharField(max_length=100)
