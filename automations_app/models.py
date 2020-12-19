@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 
 
@@ -36,6 +37,9 @@ class TestedApplication(models.Model):
     number_testers = models.IntegerField()
     coverage_percent = models.DecimalField(decimal_places=2, max_digits=5,
                                            default=0.00)
+    start_project = models.DateTimeField(null=True, default=timezone.now)
+    end_project = models.DateTimeField(null=True, blank=True)
+    # is_finish = models.BooleanField(default=False)
     tool = models.ForeignKey('Tool', on_delete=models.CASCADE, null=True)
 
     def __str__(self):
@@ -43,7 +47,6 @@ class TestedApplication(models.Model):
 
 
 class Tool(models.Model):
-    application = models.ForeignKey(TestedApplication, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     programming_language = models.CharField(max_length=100)
     open_source_code = models.CharField(max_length=100)
