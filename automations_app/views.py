@@ -64,6 +64,8 @@ class TestersView(SingleTableView, views.APIView):
     def get_image_bytes(array, labels):
         pic_bytes = io.BytesIO()
         plt.scatter(array[:, 0], array[:, 1], c=labels)
+        plt.xlabel("complication")
+        plt.ylabel("salary")
         plt.savefig(pic_bytes, format="png")
         pic_bytes.seek(0)
         return pic_bytes
@@ -89,6 +91,7 @@ class TestedApplicationsView(SingleTableView, views.APIView):
     table_class = TestedApplicationsTable
     template_name = "automations_app/table.html"
     permission_classes = [permissions.IsAuthenticated]
+    paginate_by = 10
 
 
 class ToolsView(SingleTableView, views.APIView):
@@ -96,6 +99,7 @@ class ToolsView(SingleTableView, views.APIView):
     table_class = ToolsTable
     template_name = "automations_app/table.html"
     permission_classes = [permissions.IsAuthenticated]
+    paginate_by = 10
 
 
 class HoursView(SingleTableView, views.APIView):
@@ -103,6 +107,7 @@ class HoursView(SingleTableView, views.APIView):
     table_class = HoursTable
     template_name = "automations_app/table.html"
     permission_classes = [permissions.IsAuthenticated]
+    paginate_by = 10
 
 
 class RegistrationView(FormView):
