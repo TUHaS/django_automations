@@ -43,6 +43,7 @@ class TestedApplication(models.Model):
 
 
 class Tool(models.Model):
+    application = models.ForeignKey(TestedApplication, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     programming_language = models.CharField(max_length=100)
     open_source_code = models.CharField(max_length=100)
@@ -61,3 +62,8 @@ class Hour(models.Model):
 
     def __str__(self):
         return self.application.name
+
+
+
+
+
