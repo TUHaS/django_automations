@@ -68,23 +68,24 @@ class TestersView(SingleTableView, views.APIView):
                     users_info[user_id]["hours"].append(proj_hour)
 
             # подготовка numpy-массива, который будет использоваться в KMeans
-            array = np.zeros((len(users_info), 3), dtype=np.uint)
+            array = np.zeros((len(users_info), 4), dtype=np.uint)
             for idx, user_id in enumerate(users_info):
                 user_data = users_info[user_id]
                 avg_hours = np.average(user_data["hours"])
                 array[idx, 0] = avg_hours
                 array[idx, 1] = user_data["finished_projects"]
                 array[idx, 2] = user_data["salary"]
-
+                array[idx, 3] = user_id
+            only_data = array[:, :3]
             # нормализация данных
             mms = MinMaxScaler()
-            mms.fit(array)
-            data_mms = mms.transform(array)
+            mms.fit(only_data)
+            data_mms = mms.transform(only_data)
             # вычисление центров для масс и получение меток для выборки
             labels = KMeans(n_clusters=3, random_state=0).fit_predict(data_mms)
             # преобразование результата в бинарный формат
             if request.data['type'] == 'image':
-                file = self.get_image_bytes(array, labels)
+                file = self.get_image_bytes(only_data, labels)
                 filename = 'image.jpeg'
             elif request.data['type'] == 'clustering-data':
                 file = self.get_excel_bytes(array, labels)
@@ -121,12 +122,13 @@ class TestersView(SingleTableView, views.APIView):
         new_data = np.zeros((array_copy.shape[0], array_copy.shape[1]+1),
                             dtype=np.float)
         # объединение данных из БД с метками из результата KMeans
-        new_data[:, 0] = array[:, 0]
-        new_data[:, 1] = array[:, 1]
-        new_data[:, 2] = array[:, 2]
-        new_data[:, 3] = labels
+        new_data[:, 0] = array[:, 3]
+        new_data[:, 1] = array[:, 0]
+        new_data[:, 2] = array[:, 1]
+        new_data[:, 3] = array[:, 2]
+        new_data[:, 4] = labels
         data_bytes = io.BytesIO()
-        df = pd.DataFrame(new_data, columns=["Average Hours",
+        df = pd.DataFrame(new_data, columns=["Tester ID", "Average Hours",
                                              "Finish projects number", "Salary",
                                              "KMeans Group ID"])
         # сохранение данных в excel формате в объект BytesIO
@@ -168,7 +170,8 @@ class HoursView(SingleTableView, views.APIView):
     paginate_by = 10
 
 
-# класс-контроллер отвечает за логику веб-приложения при взаимодействии с формой регистрации
+# класс-контроллер отвечает за логику веб-приложения при взаимодействии
+# с формой регистрации
 class RegistrationView(FormView):
     form_class = UserRegistrationForm
     template_name = "registration/register.html"
