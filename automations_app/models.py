@@ -3,43 +3,47 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 
 
-# class SkillLevel(models.Model):
-#     name = models.CharField(max_length=100)
-#     salary = models.DecimalField(decimal_places=0, max_digits=9)
-#
-#     def __str__(self):е
-#         return self.name
-
-
 class User(AbstractUser):
-    # level = models.ForeignKey(SkillLevel, on_delete=models.CASCADE,
-    #                           related_name="level_user_fk", null=True)
     LEVEL_CHOICES = [
         ("Junior", "Junior"),
         ("Senior", "Senior"),
         ("Middle", "Middle")
-    ]
+    ] # ограничиваем выбор значений поля только этими вариантами
     level = models.CharField(max_length=6, choices=LEVEL_CHOICES,
                              default="Junior")
     salary = models.DecimalField(decimal_places=0, max_digits=9, default=0.00)
 
+    # для вывода логина пользователя в админ-панели в качестве ссылки на запись
+    # в БД вместо стандартного Object(1), Object(2) и т.д.
     def __str__(self):
         return self.username
 
     class Meta:
+        # название таблицы в админ-панели (по умолчанию берётся название класса)
         verbose_name = "Tester"
+        # название таблицы в админ-панели во множественном числе
         verbose_name_plural = "Testers"
 
 
 class TestedApplication(models.Model):
+    # CharField соответствует VARCHAR в БД
     name = models.CharField(max_length=100)
+    # если в скобках не указан параметр null=True, значит поле ненулевое
     complication = models.IntegerField()
+    # если в скобках не указан параметр default=значение, значит значения
+    # по умолчанию оно не имеет
     number_testers = models.IntegerField()
+    # DecimalField соответствует домену DECIMAL в MySQL
+    # параметр decimal_places задает кол-во знаков после запятой,
+    # а max_digits - максимальное кол-во цифр
     coverage_percent = models.DecimalField(decimal_places=2, max_digits=5,
                                            default=0.00)
+
     start_project = models.DateTimeField(null=True, default=timezone.now)
     end_project = models.DateTimeField(null=True, blank=True)
-    # is_finish = models.BooleanField(default=False)
+
+    # ForeignKey задаёт связь many-to-one с другой таблицей
+    # (с какой именно - указывается первым параметром)
     tool = models.ForeignKey('Tool', on_delete=models.CASCADE, null=True)
 
     def __str__(self):

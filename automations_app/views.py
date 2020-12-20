@@ -24,6 +24,7 @@ from .models import User, Hour, Tool, TestedApplication
 from .tables import TesterTable, TestedApplicationsTable, HoursTable, ToolsTable
 
 
+# контроллер в виде функции, который только рендерит html-страницу
 def index(request):
     return render(request, template_name="automations_app/base.html")
 
@@ -35,12 +36,15 @@ class TestersView(SingleTableView, views.APIView):
     template_name = "automations_app/table_user.html"
     permission_classes = [permissions.IsAdminUser]
 
+    # описание логики веб-приложения при поступлении POST запроса на
+    # URL-адрес, к которому привязан этот класс
     def post(self, request):
         response_context = {}
-        # получение всех записей из модели (таблицы) Hour
+
         datetime_now = timezone.now()
         datetime_year = datetime_now - timedelta(days=365*2)
-        # проект, который уже закончился + начался в течение последнего года
+
+        # выборка данных за последние 2 года по проектам, которые завершились
         objs_hours = Hour.objects.filter(
             ~Q(application__end_project=None)
             & Q(application__start_project__range=(datetime_year, datetime_now))
@@ -48,7 +52,7 @@ class TestersView(SingleTableView, views.APIView):
         users_info = dict()
         #
         if len(objs_hours) > 0:
-            # формирование выборки (сложность проекта + зарплата тестера)
+            # заполнение словаря с необработанными данными
             for idx, obj in enumerate(objs_hours):
                 user_id = obj.tester.id
                 proj_hour = obj.number_hours
@@ -63,6 +67,7 @@ class TestersView(SingleTableView, views.APIView):
                     users_info[user_id]["finished_projects"] += 1
                     users_info[user_id]["hours"].append(proj_hour)
 
+            # подготовка numpy-массива, который будет использоваться в KMeans
             array = np.zeros((len(users_info), 3), dtype=np.uint)
             for idx, user_id in enumerate(users_info):
                 user_data = users_info[user_id]
@@ -70,6 +75,7 @@ class TestersView(SingleTableView, views.APIView):
                 array[idx, 0] = avg_hours
                 array[idx, 1] = user_data["finished_projects"]
                 array[idx, 2] = user_data["salary"]
+
             # нормализация данных
             mms = MinMaxScaler()
             mms.fit(array)
@@ -95,6 +101,7 @@ class TestersView(SingleTableView, views.APIView):
     @staticmethod
     def get_image_bytes(array, labels):
         pic_bytes = io.BytesIO()
+        # визуализация данных
         fig = plt.figure(figsize=(20, 10))
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(array[:, 0], array[:, 1], array[:, 2], c=labels,
@@ -105,7 +112,6 @@ class TestersView(SingleTableView, views.APIView):
         ax.set_zlabel("salary of user")
         ax.dist = 10
         fig.savefig(pic_bytes, format="png")
-        # plt.savefig(pic_bytes, format="png")
         pic_bytes.seek(0)
         return pic_bytes
 
@@ -114,17 +120,25 @@ class TestersView(SingleTableView, views.APIView):
         array_copy = array.copy()
         new_data = np.zeros((array_copy.shape[0], array_copy.shape[1]+1),
                             dtype=np.float)
+        # объединение данных из БД с метками из результата KMeans
         new_data[:, 0] = array[:, 0]
         new_data[:, 1] = array[:, 1]
-        new_data[:, 2] = labels
+        new_data[:, 2] = array[:, 2]
+        new_data[:, 3] = labels
         data_bytes = io.BytesIO()
-        df = pd.DataFrame(new_data, columns=["Complication", "Salary",
+        df = pd.DataFrame(new_data, columns=["Average Hours",
+                                             "Finish projects number", "Salary",
                                              "KMeans Group ID"])
+        # сохранение данных в excel формате в объект BytesIO
         df.to_excel(data_bytes, index=False, encoding='utf-8')
         data_bytes.seek(0)
         return data_bytes
 
 
+# наследование от класса SingleTableView позволяет не описывать то,
+# как нужно извлекать данные из БД и выводить таблицу в html-страницу в ответ
+# на GET запрос пользователя - эти действия происходят в подключенном стороннем
+# приложении django-tables2
 class TestedApplicationsView(SingleTableView, views.APIView):
     model = TestedApplication
     table_class = TestedApplicationsTable
@@ -134,8 +148,11 @@ class TestedApplicationsView(SingleTableView, views.APIView):
 
 
 class ToolsView(SingleTableView, views.APIView):
+    # определение модели (таблицы), из которой извлекаются записи
     model = Tool
+    # определение класса для описывания внешнего вида таблицы на веб-странице
     table_class = ToolsTable
+    # определение пути к html-шаблону, который будет рендериться
     template_name = "automations_app/table.html"
     permission_classes = [permissions.IsAuthenticated]
     paginate_by = 10
@@ -145,10 +162,13 @@ class HoursView(SingleTableView, views.APIView):
     model = Hour
     table_class = HoursTable
     template_name = "automations_app/table.html"
+    # не аутентифицированные пользователи не смогут просмотреть страницу
+    # (вернёт ошибку 403 Forbidden)
     permission_classes = [permissions.IsAuthenticated]
     paginate_by = 10
 
 
+# класс-контроллер отвечает за логику веб-приложения при взаимодействии с формой регистрации
 class RegistrationView(FormView):
     form_class = UserRegistrationForm
     template_name = "registration/register.html"
